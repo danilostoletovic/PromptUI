@@ -1,4 +1,4 @@
-# OpenUI AI Workspace
+## PromptUI (OpenUI AI Workspace)
 
 A lightweight proof-of-concept AI workspace that validates rendering interactive generative UI directly from large language model streams using **OpenUI** (`@openuidev/react-lang` & `@openuidev/react-ui`) and OpenAI.
 
