@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { ViewMode, FallbackViewMode } from '../types/chat';
 import { detectOpenUI } from '../utils/openuiDetector';
+import { SiteIcon } from './SiteIcon';
 
 interface OpenUIRendererProps {
   content: string;
@@ -91,8 +92,8 @@ export const OpenUIRenderer: React.FC<OpenUIRendererProps> = ({
       {/* Empty State / Welcome Screen */}
       {!hasContent && !isStreaming && !error && (
         <div className="chatgpt-welcome-view">
-          <div className="chatgpt-hero-icon">
-            <Sparkles size={28} />
+          <div className="chatgpt-hero-icon" style={{ background: 'transparent', padding: 0 }}>
+            <SiteIcon size={48} />
           </div>
           <h2 className="chatgpt-hero-title">What can OpenUI build for you?</h2>
           <p className="chatgpt-hero-desc">

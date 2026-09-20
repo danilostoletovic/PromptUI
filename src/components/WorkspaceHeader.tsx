@@ -1,5 +1,6 @@
 import React from 'react';
 import { PanelLeft, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { SiteIcon } from './SiteIcon';
 import type { HealthStatus } from '../types/chat';
 
 interface WorkspaceHeaderProps {
@@ -42,7 +43,8 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         </button>
 
         {/* Model Selector Dropdown Pill */}
-        <div className="model-selector-pill" title="Model: OpenUI 4o (OpenAI gpt-4o)">
+        <div className="model-selector-pill" title="PromptUI - OpenUI 4o (OpenAI gpt-4o)">
+          <SiteIcon size={20} />
           <span className="model-name">OpenUI 4o</span>
           <span className="model-badge">OpenAI</span>
           <ChevronDown size={14} className="model-chevron" />

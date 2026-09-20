@@ -1,5 +1,6 @@
 import React from 'react';
-import { Plus, MessageSquare, PanelLeft, Sparkles } from 'lucide-react';
+import { Plus, MessageSquare, PanelLeft } from 'lucide-react';
+import { SiteIcon } from './SiteIcon';
 import type { SessionItem } from '../types/chat';
 
 interface SessionHistoryProps {
@@ -74,8 +75,8 @@ export const SessionHistory: React.FC<SessionHistoryProps> = ({
       {/* Sidebar Footer */}
       <div className="sidebar-footer">
         <div className="user-profile-pill">
-          <div className="profile-avatar">
-            <Sparkles size={14} />
+          <div className="profile-avatar" style={{ background: 'transparent', padding: 0 }}>
+            <SiteIcon size={24} />
           </div>
           <div className="profile-info">
             <span className="profile-name">OpenUI Workspace</span>
