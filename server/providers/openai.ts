@@ -21,7 +21,6 @@ export class OpenAIProvider implements AIProvider {
     options?: StreamChatOptions
   ): AsyncIterable<string> {
     const model = options?.model || process.env.OPENAI_MODEL || 'gpt-4o';
-    const temperature = options?.temperature ?? 0.2;
 
     const formattedMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
 
@@ -42,9 +41,9 @@ export class OpenAIProvider implements AIProvider {
     const stream = await this.client.chat.completions.create({
       model,
       messages: formattedMessages,
-      temperature,
+      ...(options?.temperature !== undefined ? { temperature: options.temperature } : {}),
       stream: true,
-    });
+    }, { signal: options?.signal });
 
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content;

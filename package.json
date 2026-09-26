@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "test": "bun test",
     "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"bun run server\" \"vite\"",
     "server": "bun run server/index.ts",
     "client": "vite",

@@ -1,6 +1,8 @@
 import { getProvider } from './providers';
 import { generateOpenUISystemPrompt } from './prompt';
 import type { ChatMessage } from './providers/types';
+import OpenAI from 'openai';
+import { requestKey, validModel, connectionError } from './connection';
 
 const PORT = Number(process.env.PORT) || 3001;
 
@@ -22,7 +24,7 @@ const server = Bun.serve({
 
     // Health check endpoint
     if (url.pathname === '/api/health' && req.method === 'GET') {
-      const hasApiKey = Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim() !== '');
+      const hasApiKey = Boolean(requestKey(req));
       return Response.json(
         {
           status: 'ok',
@@ -34,24 +36,41 @@ const server = Bun.serve({
       );
     }
 
+    if (url.pathname === '/api/connection' && req.method === 'POST') {
+      try {
+        const body = await req.json();
+        const key = requestKey(req);
+        if (!key || !validModel(body?.model)) return Response.json({ error: 'Enter an API key and a valid model name.' }, { status: 400, headers: corsHeaders });
+        const client = new OpenAI({ apiKey: key, timeout: 15000, maxRetries: 0 });
+        await client.models.retrieve(body.model, { signal: req.signal });
+        return Response.json({ connected: true }, { headers: corsHeaders });
+      } catch (error) {
+        return Response.json({ error: connectionError(error) }, { status: 400, headers: corsHeaders });
+      }
+    }
+
     // Chat completion streaming endpoint (Real OpenAI Integration)
     if (url.pathname === '/api/chat' && req.method === 'POST') {
       try {
         const body = (await req.json()) as {
           messages?: ChatMessage[];
           provider?: string;
+          model?: string;
         };
 
         const { messages, provider: providerId = 'openai' } = body;
 
-        if (!Array.isArray(messages) || messages.length === 0) {
+        if (!Array.isArray(messages) || messages.length === 0 || messages.length > 100 ||
+          messages.some(m => !m || !['user', 'assistant'].includes(m.role) || typeof m.content !== 'string') ||
+          messages.reduce((size, m) => size + m.content.length, 0) > 200000) {
           return new Response(JSON.stringify({ error: 'Messages array is required.' }), {
             status: 400,
             headers: { 'Content-Type': 'application/json', ...corsHeaders },
           });
         }
 
-        if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_API_KEY.trim()) {
+        if (body.model !== undefined && !validModel(body.model)) return Response.json({ error: 'Invalid model name.' }, { status: 400, headers: corsHeaders });
+        if (!requestKey(req)) {
           return new Response(
             JSON.stringify({
               error:
@@ -64,29 +83,34 @@ const server = Bun.serve({
           );
         }
 
-        const provider = getProvider(providerId);
+        const provider = getProvider(providerId, requestKey(req));
         const systemPrompt = generateOpenUISystemPrompt();
 
-        const stream = provider.streamChat(messages, { systemPrompt });
+        const abort = new AbortController();
+        req.signal.addEventListener('abort', () => abort.abort(), { once: true });
+        const stream = provider.streamChat(messages, { systemPrompt, signal: abort.signal, model: body.model });
 
         const readable = new ReadableStream({
           async start(controller) {
             const encoder = new TextEncoder();
             try {
               for await (const chunk of stream) {
+                if (abort.signal.aborted) return;
                 const sseMessage = `data: ${JSON.stringify({ text: chunk })}\n\n`;
                 controller.enqueue(encoder.encode(sseMessage));
               }
               controller.enqueue(encoder.encode('data: [DONE]\n\n'));
               controller.close();
             } catch (streamError: any) {
+              if (abort.signal.aborted) return;
               const errPayload = `data: ${JSON.stringify({
-                error: streamError?.message || 'Streaming generation failed.',
+                error: connectionError(streamError),
               })}\n\n`;
               controller.enqueue(encoder.encode(errPayload));
               controller.close();
             }
           },
+          cancel() { abort.abort(); },
         });
 
         return new Response(readable, {

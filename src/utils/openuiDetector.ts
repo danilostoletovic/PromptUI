@@ -65,7 +65,7 @@ export function detectOpenUI(
   }
 
   // Pattern 2: OpenUI Lang statement containing root definition
-  const hasRootAssignment = /\broot\s*=/m.test(candidate);
+  const hasRootAssignment = /^\s*root\s*=\s*[A-Z][A-Za-z0-9_]*\s*\(/m.test(candidate);
 
   // Pattern 3: Streaming early chunk heuristics
   if (isStreaming && !hasRootAssignment) {
@@ -81,7 +81,7 @@ export function detectOpenUI(
     }
 
     // If the stream starts with "r", "ro", "roo", "root"
-    if (/^r(?:o(?:o(?:t)?)?)?(?:\s*=)?/i.test(trimmed)) {
+    if (/^(?:r|ro|roo|root)(?:\s*=\s*[A-Za-z]*)?$/.test(trimmed)) {
       return {
         isOpenUI: true,
         dslContent: candidate,

@@ -1,0 +1,10 @@
+export const PROMPT_EXAMPLES = [
+  { title: 'Make a decision', desc: 'Compare options against the things you care about.', prompt: 'Compare SQLite and PostgreSQL for a small team building a booking app. Include tradeoffs, operational effort, and when to choose each.' },
+  { title: 'Turn notes into a plan', desc: 'Give messy information a useful structure.', prompt: 'Turn these launch notes into a prioritized checklist: landing page needs copy, checkout fails on mobile, analytics not configured, launch Friday, two developers available.' },
+  { title: 'Learn something difficult', desc: 'A worked example, then a question to test yourself.', prompt: 'Teach me Bayes’ theorem using a simple numerical example. I know basic percentages. Finish with a practice question and a separate answer tab.' },
+  { title: 'Work with your data', desc: 'Paste a table and make the numbers readable.', prompt: 'Show this CSV as a table:\nMonth,Revenue,Costs\nJanuary,12000,8000\nFebruary,14500,9000\nMarch,13200,8500' },
+  { title: 'Write with a purpose', desc: 'Draft real copy for a specific reader.', prompt: 'Write three short welcome emails for a neighborhood pottery studio. Warm, understated tone. Invite beginners to a Saturday class; do not invent a price.' },
+  { title: 'Debug a small program', desc: 'Find the problem and explain a working fix.', prompt: 'Explain why this Python function fails on an empty list, then fix it and show examples: def average(xs): return sum(xs) / len(xs)' },
+  { title: 'Plan around constraints', desc: 'Keep the budget, time, and preferences in view.', prompt: 'Plan five vegetarian weeknight dinners for two people, each under 30 minutes. Reuse ingredients and include a consolidated shopping list.' },
+  { title: 'Prepare for a conversation', desc: 'Practice with focused questions and examples.', prompt: 'Help me prepare for a junior frontend interview. Create a 3-day study plan covering JavaScript, React, and accessibility, with one practice exercise per day.' },
+];

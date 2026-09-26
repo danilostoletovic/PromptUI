@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageSquare, PanelLeft } from 'lucide-react';
+import { Plus, MessageSquare, PanelLeft, Trash2, Settings } from 'lucide-react';
 import { SiteIcon } from './SiteIcon';
 import type { SessionItem } from '../types/chat';
 
@@ -10,6 +10,8 @@ interface SessionHistoryProps {
   onNewPrompt: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  onDeleteSession: (id: string) => void;
+  onSettings: () => void;
 }
 
 export const SessionHistory: React.FC<SessionHistoryProps> = ({
@@ -19,9 +21,11 @@ export const SessionHistory: React.FC<SessionHistoryProps> = ({
   onNewPrompt,
   isOpen,
   onToggle,
+  onDeleteSession,
+  onSettings,
 }) => {
   return (
-    <aside className={`chatgpt-sidebar ${isOpen ? 'open' : 'closed'}`}>
+    <aside aria-label="Chat history" inert={!isOpen} className={`chatgpt-sidebar ${isOpen ? 'open' : 'closed'}`}>
       {/* Sidebar Top Toolbar */}
       <div className="sidebar-top">
         <button
@@ -57,8 +61,7 @@ export const SessionHistory: React.FC<SessionHistoryProps> = ({
             {history.map((item) => {
               const isActive = item.id === activeSessionId;
               return (
-                <button
-                  key={item.id}
+                <div key={item.id} className="sidebar-chat-row"><button
                   onClick={() => onSelectSession(item.id)}
                   className={`sidebar-chat-item ${isActive ? 'active' : ''}`}
                   title={item.prompt}
@@ -66,6 +69,7 @@ export const SessionHistory: React.FC<SessionHistoryProps> = ({
                   <MessageSquare size={15} className="chat-item-icon" />
                   <span className="chat-item-title">{item.prompt}</span>
                 </button>
+                <button className="delete-chat-button" onClick={() => onDeleteSession(item.id)} aria-label={`Delete chat: ${item.prompt}`} title="Delete chat"><Trash2 size={15} /></button></div>
               );
             })}
           </div>
@@ -74,6 +78,7 @@ export const SessionHistory: React.FC<SessionHistoryProps> = ({
 
       {/* Sidebar Footer */}
       <div className="sidebar-footer">
+        <button className="sidebar-new-chat-btn" onClick={onSettings}><Settings size={17} /> Settings</button>
         <div className="user-profile-pill">
           <div className="profile-avatar" style={{ background: 'transparent', padding: 0 }}>
             <SiteIcon size={24} />

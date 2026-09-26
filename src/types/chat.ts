@@ -6,6 +6,7 @@ export interface ChatMessage {
 }
 
 export interface SessionItem {
+  messages?: ChatMessage[];
   id: string;
   prompt: string;
   response: string;

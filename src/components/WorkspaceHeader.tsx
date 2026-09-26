@@ -1,8 +1,7 @@
 import React from 'react';
-import { PanelLeft, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { PanelLeft, Plus, Trash2, Settings } from 'lucide-react';
 import { SiteIcon } from './SiteIcon';
 import type { HealthStatus } from '../types/chat';
-
 interface WorkspaceHeaderProps {
   health: HealthStatus | null;
   onRefreshHealth: () => void;
@@ -11,15 +10,17 @@ interface WorkspaceHeaderProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   hasMessages: boolean;
+  onSettings: () => void;
 }
-
 export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   health,
+  onRefreshHealth,
   onClearSession,
   onNewChat,
   isSidebarOpen,
   onToggleSidebar,
   hasMessages,
+  onSettings,
 }) => {
   return (
     <header className="chatgpt-header">
@@ -32,7 +33,6 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         >
           <PanelLeft size={18} />
         </button>
-
         <button
           onClick={onNewChat}
           className="header-icon-btn"
@@ -41,32 +41,32 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         >
           <Plus size={18} />
         </button>
-
         {/* Model Selector Dropdown Pill */}
-        <div className="model-selector-pill" title="PromptUI - OpenUI 4o (OpenAI gpt-4o)">
+        <div className="model-selector-pill" title={health?.model || "Checking connection"}>
           <SiteIcon size={20} />
-          <span className="model-name">OpenUI 4o</span>
-          <span className="model-badge">OpenAI</span>
-          <ChevronDown size={14} className="model-chevron" />
+          <span className="model-name">PromptUI</span>
+          <span className="model-badge">{health?.hasApiKey ? health.model : "Demo"}</span>
         </div>
       </div>
-
       <div className="header-right">
+        <button className="header-icon-btn" onClick={onSettings} aria-label="Open settings" title="Settings"><Settings size={18} /></button>
         {/* Connection / OpenAI Status */}
-        <div
+        <button
+          type="button"
+          onClick={onRefreshHealth}
+          aria-label="Recheck AI connection"
           className="header-status-indicator"
           title={
             health?.hasApiKey
               ? 'OpenAI API Gateway Connected'
-              : 'Mock Mode Active - Generates OpenUI interfaces offline'
+              : 'Offline CSV tables and sample interfaces. Click to recheck the connection.'
           }
         >
           <span className={health?.hasApiKey ? 'status-dot-green' : 'status-dot-blue'} />
           <span className="status-text">
-            {health?.hasApiKey ? 'OpenAI Active' : 'Mock Mode'}
+            {health?.hasApiKey ? 'OpenAI Active' : health ? 'Offline demo' : 'Connecting…'}
           </span>
-        </div>
-
+        </button>
         {hasMessages && (
           <button
             onClick={onClearSession}

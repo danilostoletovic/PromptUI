@@ -1,199 +1,178 @@
-## PromptUI (OpenUI AI Workspace)
+# PromptUI
 
-A lightweight proof-of-concept AI workspace that validates rendering interactive generative UI directly from large language model streams using **OpenUI** (`@openuidev/react-lang` & `@openuidev/react-ui`) and OpenAI.
+PromptUI is a local AI workspace that turns prompts into streamed, interactive interfaces using OpenUI and OpenAI. Use it for writing, coding explanations, study material, comparisons, plans, or analysis of pasted data. The model chooses a layout for the task: text, tables, tabs, steps, charts, or forms.
 
-Instead of outputting static Markdown or brittle JSON payloads, the model streams **OpenUI Lang**—a token-efficient, streaming-first domain-specific language—which the browser dynamically parses and renders into live, interactive React components (such as comparison tables, step-by-step itineraries, KPI dashboards, tabs, and metric callouts).
+This is an experimental, single-user application. Custom AI responses require a running backend and an OpenAI API key. A limited offline demo is available without a key.
 
----
+## Features
 
-## What the Project Does
+- **Task-specific generation:** instructions preserve the user's constraints and conversation context rather than forcing every request into a dashboard template. Eight starter prompts cover different tasks.
+- **Streaming interfaces:** OpenUI Lang renders progressively through React. Switch between the rendered interface and its source, or copy the response.
+- **Follow-up interactions:** supported conversation buttons and form submissions send answers back to the model. Reopening a history entry restores its conversation context.
+- **Delete and undo:** delete individual entries with the trash button in Recent Chats. Undo restores the most recently deleted entry. Deleting the active entry also clears the current workspace.
+- **Settings:** enter a session API key, select a model, remove the session key, and read project credits and the full MIT license.
+- **Mobile and desktop layouts:** mobile navigation uses a collapsible drawer with backdrop and Escape dismissal. Settings, touch targets, response controls, and scrollable results adapt to smaller screens.
+- **Rendering recovery:** natural-language responses have a text fallback. Parser errors expose a **Repair interface** action that requests a corrected response from the model.
+- **Stream handling:** cancellation reaches the provider. Interrupted or failed live responses show an error and retain partial output instead of silently appending demo content.
 
-Modern generative AI applications typically face a compromise:
-- **Plain Markdown / Text**: Fast to stream, but non-interactive and static.
-- **Raw JSON**: Difficult to stream incrementally, consumes significantly more tokens, and requires rigid custom UI mapping on the client.
+## Quick start
 
-**OpenUI Lang** provides a middle ground:
-1. The server equips the LLM with an OpenUI system prompt describing available UI primitives (`Table`, `Tabs`, `Card`, `Callout`, `Steps`, etc.).
-2. The model returns concise declarative assignment statements (e.g. `root = Stack([tbl])`).
-3. The client progressively parses the token stream and renders interactive components in real time.
-4. A built-in detector validates output before passing it to the parser, routing natural-language responses to a formatted message fallback to prevent parser errors.
-
----
-
-## Features & Capabilities
-
-- **Streaming OpenUI Rendering**: Real-time component generation from OpenAI (`eg: gpt-4o`) via Server-Sent Events (SSE).
-- **Interactive UI Primitives**: Renders structured tables, tabs, multi-card summaries, metric badges, and callouts.
-- **Response Validation & Graceful Fallback**: An intelligent detection layer (`openuiDetector.ts`) intercepts natural-language or refusal responses (e.g. *"I am unable to..."*) and displays them in a clean message card, preventing `"Code parsed but produced no renderable root component"` errors.
-- **Multi-View Modes**:
-  - **Interactive UI**: Live interactive React component tree.
-  - **OpenUI Lang**: Raw DSL code viewer with syntax metrics.
-  - **Dynamic OpenUI Card**: Converts fallback text into an OpenUI Callout component with a single click.
-  - **Raw Text**: View plain text responses.
-- **Offline Mock Support**: Built-in mock data generator allows full testing of interactive OpenUI streaming without requiring an OpenAI API key or internet access.
-- **ChatGPT-Inspired Light Theme**: Clean, minimalist interface with a collapsible session sidebar, quick prompt suggestions, and floating input capsule.
-
----
-
-## Explicitly Unsupported Capabilities
-
-To keep this proof-of-concept focused on generative UI validation, the following production capabilities are deliberately out of scope:
-- **No User Accounts or Authentication**: Intended for local single-user exploration.
-- **No Persistent Database or Cloud Storage**: Session history is stored in-memory during the browser session.
-- **No Payments or Billing**: No subscription logic, rate limiting, or paywall integration.
-- **Desktop/Tablet Focus**: Responsive layout is optimized primarily for desktop and tablet screens; dedicated mobile navigation patterns are not implemented.
-- **No Tool/Function Calling or File Uploads**: Does not execute server tools, web scraping, or file attachments.
-
----
-
-## Tech Stack
-
-- **Frontend**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [Vite](https://vitejs.dev/), Vanilla CSS Design Tokens, [Lucide React](https://lucide.dev/) icons.
-- **Generative UI Engine**:
-  - `@openuidev/react-lang` — Streaming OpenUI Lang parser and `<Renderer />`.
-  - `@openuidev/react-ui` — Component library definitions and system prompt generator.
-  - `@openuidev/react-headless` — Headless state primitives.
-- **Backend**: [Bun](https://bun.sh/) (`Bun.serve`) providing lightweight local API endpoints (`/api/chat` SSE and `/api/health`).
-- **AI Integration**: Official [OpenAI Node SDK](https://github.com/openai/openai-node) streaming `gpt-4o`.
-
----
-
-## Prerequisites
-
-- [Bun](https://bun.sh/) (v1.1 or later recommended).
-- An [OpenAI API Key](https://platform.openai.com/api-keys) (optional if using mock mode).
-
----
-
-## Installation
-
-1. Clone or download the repository:
-   ```bash
-   git clone <repository-url>
-   cd aiTestApp
-   ```
-
-2. Install dependencies using Bun:
-   ```bash
-   bun install
-   ```
-
----
-
-## Environment Configuration
-
-1. Copy the example environment file to create `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Open `.env` in your text editor and provide your configuration:
-   ```env
-   # OpenAI API Configuration
-   OPENAI_API_KEY=your_openai_api_key_here
-
-   # Model selection (defaults to gpt-4o)
-   OPENAI_MODEL=gpt-4o
-
-   # Bun Server Port (Vite proxies /api to this port)
-   PORT=3001
-   ```
-
-> [!IMPORTANT]
-> The `.env` file contains sensitive credentials and is strictly excluded by `.gitignore`. Never commit `.env` or share your secret API key publicly.
-
----
-
-## Running the Application
-
-### Option A: Automatic Mock Fallback (Zero Setup / Offline)
-
-The application includes an **automatic mock fallback**. If no `OPENAI_API_KEY` is configured or if the backend server is offline, the client seamlessly falls back to the built-in mock streaming generator:
+Install Bun 1.4.2 or later, then run these commands from the downloaded or cloned `PromptUI` directory:
 
 ```bash
+bun install
 bun run dev
 ```
 
-Open `http://localhost:5173` in your browser. All interactive template suggestions and custom queries will stream and render interactive OpenUI interfaces out of the box.
+Open [PromptUI locally](http://localhost:5173). The development command starts the Bun backend on port 3001 and Vite on port 5173. Bun must be available on your shell's `PATH`.
 
-### Option B: Live OpenAI Streaming
+### Connect through Settings
 
-To stream live responses from OpenAI:
-1. Copy `.env.example` to `.env`.
-2. Set `OPENAI_API_KEY=your_openai_api_key_here`.
-3. Run `bun run dev`.
+1. Open **Settings** using the gear icon in the header or the sidebar button.
+2. Paste your OpenAI API key.
+3. Enter a Chat Completions compatible model available to your project; the default is `gpt-4o`.
+4. Select **Connect & use key**.
+5. Close Settings and send a prompt.
 
-The workspace will detect your configured API key, display **OpenAI Active** in the header, and stream live OpenUI completions directly from `gpt-4o`.
+The backend checks whether the key can access the selected model without generating a completion. Successful verification does not guarantee available quota or compatibility with every generation request. Connection failures appear in Settings; generation failures appear beside the response.
 
----
+The session key overrides a server-configured key. **Remove session key** returns to the server key, or offline mode when no server key exists. Stop any active response before changing the connection.
 
-## Available Scripts
+Keys entered in Settings live only in the current tab's JavaScript memory. They are sent in an Authorization header to the backend, which uses them to call OpenAI. They are not saved in localStorage, chat history, or files, and reloading the page clears them.
 
-| Command | Description |
-| :--- | :--- |
-| `bun run dev` | Runs both the Bun backend server and Vite client concurrently |
-| `bun run server` | Starts only the Bun API server on port 3001 |
-| `bun run client` | Starts only the Vite development server on port 5173 |
-| `bun run build` | Runs TypeScript type check and compiles the production bundle |
-| `bun run lint` | Runs ESLint to check for code quality and syntax issues |
-| `bun run preview` | Previews the compiled production bundle locally |
+API usage is billed to your OpenAI account. PromptUI does not sell credits or display an account balance. The **Credits** section acknowledges the creator and technologies used.
 
----
+### Configure a server key instead
 
-## Project Structure
+Copy `.env.example` to `.env` and replace the placeholder key:
 
-```
-├── server/
-│   ├── index.ts                # Bun server entry point (/api/chat, /api/health)
-│   ├── prompt.ts               # OpenUI system prompt generator & constraints
-│   └── providers/              # Extensible provider abstraction (OpenAI)
-│       ├── index.ts            # Provider factory
-│       ├── openai.ts           # OpenAI SDK streaming implementation
-│       └── types.ts            # AIProvider & StreamChatOptions interfaces
-├── src/
-│   ├── components/
-│   │   ├── OpenUIRenderer.tsx  # OpenUI renderer, validation & fallback UI
-│   │   ├── PromptInput.tsx     # Floating input capsule & suggestions
-│   │   ├── SessionHistory.tsx  # Collapsible sidebar history
-│   │   └── WorkspaceHeader.tsx # Header with model info & health status
-│   ├── hooks/
-│   │   └── useChat.ts          # Chat state machine & SSE streaming hook
-│   ├── services/
-│   │   ├── api.ts              # API client & mock stream handler
-│   │   └── mockData.ts         # Predefined OpenUI responses for offline testing
-│   ├── types/
-│   │   └── chat.ts             # Message, session, and view mode types
-│   ├── utils/
-│   │   └── openuiDetector.ts   # OpenUI detection, validation & fallback wrapper
-│   ├── App.tsx                 # Main application layout
-│   ├── index.css               # ChatGPT light theme design tokens & styles
-│   └── main.tsx                # React root entry point
-├── .env.example                # Safe environment variable template
-├── .gitignore                  # Git ignore rules for secrets, builds & logs
-├── package.json                # Scripts and project dependencies
-├── tsconfig.json               # TypeScript configuration
-└── vite.config.ts              # Vite config with /api proxy to Bun server
+```env
+OPENAI_API_KEY=your_actual_api_key
+OPENAI_MODEL=gpt-4o
+PORT=3001
 ```
 
----
+Restart the backend after changing `.env`. The workspace shows **OpenAI Active** when a key is configured; this health indicator alone does not validate the key. Click the connection indicator to recheck the backend after configuration changes.
 
-## Project Status
+The Vite API proxy targets port 3001 in `vite.config.ts`. If you change `PORT`, update that proxy target too.
 
-This repository is an **early-stage experimental proof-of-concept** designed to demonstrate the feasibility of real-time generative UI using OpenUI and LLMs. The APIs and component schemas may evolve as the OpenUI project develops.
+Keep `.env` private and excluded from Git. For offline mode, omit `.env` or leave `OPENAI_API_KEY` empty rather than retaining the example placeholder.
 
----
+## Offline demo
 
-## Security
+If no key is configured or the backend cannot be reached during the health check, PromptUI starts in **Offline demo** mode. It can:
 
-- **Server-Side Key Isolation**: The `OPENAI_API_KEY` is loaded strictly inside the Bun backend (`server/index.ts`) and is never passed to or bundled with the client-side JavaScript.
-- **Client Bundles**: No `VITE_` prefixed environment variables are used to prevent secrets from being injected into the client bundle at build time.
-- **Repository Safety**: Always keep `.env` in `.gitignore` and ensure your private keys are never committed to version control.
+- Render supplied CSV as a table, including quoted commas, escaped quotes, and multiline cells.
+- Show five fixed, clearly labeled samples for the exact prompts below.
+- Display an explanation when a request needs a live model.
 
----
+Try **Work with your data**, or paste:
 
-## License
+```text
+Show this CSV as a table:
+Month,Revenue,Costs
+January,12000,8000
+February,14500,9000
+March,13200,8500
+```
 
-This project is licensed under the MIT License - see the [LICENSE](file:///c:/Users/danil/Downloads/aiTestApp/LICENSE) file for details.
+The offline renderer preserves supplied values; it does not analyze them or perform calculations. CSV rows must have consistent column counts.
+
+The fixed sample prompts are:
+
+- `Compare three laptops in a table.`
+- `Create a 7-day travel itinerary.`
+- `Explain recursion with an interactive example.`
+- `Create a simple project dashboard.`
+- `Make a workout plan.`
+
+Samples contain illustrative content, not personalized or current recommendations. Other prompts and follow-up edits require a live model. A failed live request never silently switches to a sample answer.
+
+## History and navigation
+
+Completed responses appear in Recent Chats. Each entry retains the conversation context available when it was created, so follow-ups can continue from an earlier result. The current implementation records completed turns as separate history entries.
+
+**New chat** and **Clear** reset the current workspace without deleting history. Use an entry's trash button to delete it. Undo retains only the most recent deletion and restores the history entry; select it to reopen the response.
+
+History, undo state, and session API keys are held in memory. Reloading or closing the tab clears them. There is no database or cross-device synchronization.
+
+## Scripts and verification
+
+| Command | Purpose |
+| --- | --- |
+| `bun run dev` | Start backend and frontend together |
+| `bun run server` | Start the Bun API server |
+| `bun run client` | Start the Vite development server |
+| `bun run build` | Type-check TypeScript and build the frontend |
+| `bun test` | Run credential handling, prompt routing, CSV, OpenUI parsing, and SSE regression tests |
+| `bun run lint` | Run the current ESLint configuration, which targets JavaScript and JSX files |
+| `bun run preview` | Preview the built frontend; this does not start the backend |
+
+Run `bun test` and `bun run build` when changing behavior. The tests mock connection requests and do not require a real API key. Live generation must be checked separately with your own configured account.
+
+## Architecture
+
+1. The frontend submits conversation messages to the Bun gateway.
+2. The gateway builds a system prompt from the installed OpenUI component schema and task-specific instructions.
+3. The OpenAI provider streams output over Server-Sent Events.
+4. The client detects OpenUI or plain text, renders the response, and handles supported follow-up actions.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/health` | Report configured key presence and the server's default model |
+| `POST /api/connection` | Check access to a selected model using the supplied key |
+| `POST /api/chat` | Stream a response using the conversation, model, and request or server key |
+
+### Project structure
+
+```text
+server/
+  index.ts                    API routes and streaming gateway
+  connection.ts               Request credentials, model validation, safe connection errors
+  prompt.ts                   Task instructions and OpenUI schema prompt
+  providers/                  OpenAI provider and streaming interfaces
+src/
+  components/
+    SettingsDialog.tsx        API connection, credits, and license dialog
+    SessionHistory.tsx        History drawer and delete controls
+    WorkspaceHeader.tsx       Connection status and settings access
+    PromptInput.tsx           Composer and starter prompts
+    OpenUIRenderer.tsx        Rendering, fallback views, actions, and repair
+  hooks/useChat.ts             Conversation, history, cancellation, delete, and undo state
+  services/
+    api.ts                    Health requests and SSE/demo streaming
+    connection.ts             In-memory session credentials and connection verification
+    connection.test.ts        Credential and connection regression tests
+    mockData.ts               Labeled fixed samples and offline routing
+    offlineData.ts            CSV parsing and table generation
+    promptExamples.ts         Starter prompt definitions
+    prompt.test.ts            Prompt, CSV, parser, and stream regression tests
+  types/chat.ts               Message, history, and health types
+  utils/openuiDetector.ts     Response format detection and text wrapper
+  App.tsx                     Workspace layout and responsive navigation
+  index.css                   Theme, responsive styles, and settings layout
+  main.tsx                    React entry point
+.env.example                  Server configuration template
+vite.config.ts                Development server and API proxy
+LICENSE                       MIT license
+```
+
+The stack includes React 19, TypeScript, Vite, Bun, Lucide, the OpenAI Node SDK, and `@openuidev/react-lang`, `@openuidev/react-ui`, and `@openuidev/react-headless`.
+
+## Limitations and credential handling
+
+- Intended for local, single-user use. There are no user accounts, access controls, rate limits, or production deployment setup.
+- No web browsing, live-data retrieval, file uploads, or server tool execution. Generated content depends on supplied context and the model's knowledge.
+- Conversation actions and form submissions can request another response; they do not book, purchase, send, or save things in external services.
+- A response that looks like a calculator or application is limited to the interactions supported by the installed component library.
+- Environment keys remain on the backend and are not included in the frontend bundle. Session keys entered in Settings necessarily exist in browser memory until removed or reloaded.
+- Do not commit credentials or put them in `VITE_` environment variables. Use a trusted backend and HTTPS if adapting the application beyond localhost.
+- OpenUI and model output are experimental; rendering and answer quality can vary. The build currently reports a large frontend bundle warning.
+
+## Credits and license
+
+Created by **Danilo Stoletovic**. Built with the open-source technologies listed above; third-party dependencies retain their own licenses.
+
+PromptUI is released under the [MIT License](LICENSE).
 
 Copyright (c) 2026 Danilo Stoletovic.
-

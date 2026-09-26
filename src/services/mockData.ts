@@ -1,3 +1,4 @@
+import { offlineDataResponse } from './offlineData';
 export const MOCK_RESPONSES: Record<string, string> = {
   laptops: `root = Stack([title, tbl, notes])
 title = TextContent("Laptop Comparison 2026", "large-heavy")
@@ -110,31 +111,16 @@ l2Rpe = ["8.5", "9", "8.5", "9", "9"]`,
 };
 
 export function getMockResponseForPrompt(prompt: string): string {
-  const p = prompt.toLowerCase();
-  if (p.includes('laptop') || p.includes('compare')) {
-    return MOCK_RESPONSES.laptops;
-  }
-  if (p.includes('travel') || p.includes('itinerary') || p.includes('day')) {
-    return MOCK_RESPONSES.travel;
-  }
-  if (p.includes('recurs')) {
-    return MOCK_RESPONSES.recursion;
-  }
-  if (p.includes('dash') || p.includes('project') || p.includes('sprint')) {
-    return MOCK_RESPONSES.dashboard;
-  }
-  if (p.includes('work') || p.includes('fitness') || p.includes('gym')) {
-    return MOCK_RESPONSES.workout;
-  }
-
-  // Fallback for custom prompt: generates an interactive structured UI
-  const cleanTitle = prompt.length > 40 ? prompt.slice(0, 40) + '...' : prompt;
-  return `root = Stack([dynTitle, dynCallout, dynTable])
-dynTitle = TextContent("Generated Workspace: ${cleanTitle.replace(/"/g, "'")}", "large-heavy")
-dynCallout = Callout("info", "Interactive OpenUI Output", "This interface was dynamically compiled and rendered from the OpenUI Lang stream.")
-dynTable = Table([Col("Item", items), Col("Category", cats), Col("Status", stats), Col("Score", scores)])
-items = ["Core Logic", "Rendering Layer", "Interactive Controls", "Session Cache"]
-cats = ["OpenUI Lang", "React Component", "Action Handlers", "Browser State"]
-stats = ["Active", "Active", "Ready", "Synchronized"]
-scores = ["98%", "99%", "95%", "100%"]`;
+  const data = offlineDataResponse(prompt);
+  if (data) return data;
+  const examples: Record<string, string> = {
+    'compare three laptops in a table.': 'laptops',
+    'create a 7-day travel itinerary.': 'travel',
+    'explain recursion with an interactive example.': 'recursion',
+    'create a simple project dashboard.': 'dashboard',
+    'make a workout plan.': 'workout',
+  };
+  const example = examples[prompt.trim().toLowerCase()];
+  if (example) return MOCK_RESPONSES[example].replace('Stack([', 'Stack([demoNotice, ') + '\ndemoNotice = Callout("info", "Offline example", "This is a fixed sample with illustrative content, not a personalized answer. Connect OpenAI for custom responses.")';
+  return 'root = Stack([title, notice, request])\ntitle = TextContent("Ready for your prompt", "large-heavy")\nnotice = Callout("info", "Offline demo", "Custom answers need a running backend with OPENAI_API_KEY configured. You can still paste CSV and ask for a table without a connection. Your request is shown below; no answer has been generated.")\nrequest = TextContent(' + JSON.stringify(prompt) + ')';
 }

@@ -1,3 +1,4 @@
+import { PROMPT_EXAMPLES } from '../services/promptExamples';
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowUp, Square, Sparkles } from 'lucide-react';
 
@@ -7,14 +8,6 @@ interface PromptInputProps {
   isStreaming: boolean;
   disabled?: boolean;
 }
-
-const SUGGESTIONS = [
-  'Compare three laptops in a table.',
-  'Create a 7-day travel itinerary.',
-  'Explain recursion with an interactive example.',
-  'Create a simple project dashboard.',
-  'Make a workout plan.',
-];
 
 export const PromptInput: React.FC<PromptInputProps> = ({
   onSendMessage,
@@ -43,7 +36,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSubmit();
     }
@@ -60,16 +53,16 @@ export const PromptInput: React.FC<PromptInputProps> = ({
     <div className="chatgpt-input-wrapper">
       {/* Quick Suggestion Pills */}
       <div className="chatgpt-suggestions-bar">
-        {SUGGESTIONS.map((s, idx) => (
+        {PROMPT_EXAMPLES.map((s, idx) => (
           <button
             key={idx}
             type="button"
             className="chatgpt-pill"
             disabled={isStreaming || disabled}
-            onClick={() => handleSelectSuggestion(s)}
+            onClick={() => handleSelectSuggestion(s.prompt)}
           >
             <Sparkles size={11} className="pill-sparkle" />
-            <span>{s}</span>
+            <span>{s.title}</span>
           </button>
         ))}
       </div>
@@ -80,10 +73,11 @@ export const PromptInput: React.FC<PromptInputProps> = ({
           <textarea
             ref={textareaRef}
             rows={1}
+            aria-label="Your prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask OpenUI to generate an interactive table, dashboard, or layout..."
+            placeholder="Ask anything, paste data, or describe what you want to change…"
             disabled={disabled || isStreaming}
             className="chatgpt-textarea"
           />
@@ -113,7 +107,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
       </form>
 
       <div className="chatgpt-disclaimer">
-        OpenUI compiles line-oriented OpenUI Lang directly into interactive React components.
+        Include your context and constraints. Follow up to refine the result.
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Renderer } from '@openuidev/react-lang';
 import { openuiLibrary } from '@openuidev/react-ui';
-import type { OpenUIError } from '@openuidev/react-lang';
+import type { OpenUIError, ActionEvent } from '@openuidev/react-lang';
 import {
   Code,
   LayoutTemplate,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { ViewMode, FallbackViewMode } from '../types/chat';
 import { detectOpenUI } from '../utils/openuiDetector';
+import { PROMPT_EXAMPLES } from '../services/promptExamples';
 import { SiteIcon } from './SiteIcon';
 
 interface OpenUIRendererProps {
@@ -25,29 +26,6 @@ interface OpenUIRendererProps {
   prompt: string;
   onSelectPrompt: (prompt: string) => void;
 }
-
-const FEATURED_CARDS = [
-  {
-    title: 'Compare 3 Laptops',
-    desc: 'Structured comparison table with specs and pricing',
-    prompt: 'Compare three laptops in a table.',
-  },
-  {
-    title: '7-Day Travel Itinerary',
-    desc: 'Interactive step-by-step trip plan with daily activities',
-    prompt: 'Create a 7-day travel itinerary.',
-  },
-  {
-    title: 'Recursion with Interactive Demo',
-    desc: 'Visual explanation with interactive controls and callouts',
-    prompt: 'Explain recursion with an interactive example.',
-  },
-  {
-    title: 'Project Dashboard',
-    desc: 'KPI metrics, progress bars, and team task table',
-    prompt: 'Create a simple project dashboard.',
-  },
-];
 
 export const OpenUIRenderer: React.FC<OpenUIRendererProps> = ({
   content,
@@ -74,18 +52,26 @@ export const OpenUIRenderer: React.FC<OpenUIRendererProps> = ({
   };
 
   // Gracefully filter out transient "no renderable root component" errors during partial streams
-  const handleParseErrors = (errors: OpenUIError[] | null) => {
+  const handleParseErrors = useCallback((errors: OpenUIError[] | null) => {
     if (!errors) {
       setParseErrors([]);
       return;
     }
     const filtered = errors.filter(
-      (e) => !e.message?.includes('Code parsed but produced no renderable root component')
+      (e) => !isStreaming || !e.message?.includes('Code parsed but produced no renderable root component')
     );
     setParseErrors(filtered);
-  };
+  }, [isStreaming]);
 
   const hasContent = Boolean(content && content.trim());
+  const handleAction = (event: ActionEvent) => {
+    if (isStreaming) return;
+    if (event.type === 'continue_conversation') {
+      const message = event.humanFriendlyMessage || String(event.params.message || 'Use these answers to continue.');
+      const context = typeof event.params.context === 'string' ? `\n${event.params.context}` : '';
+      onSelectPrompt(`${message}${context}${event.formState ? `\nForm answers: ${JSON.stringify(event.formState)}` : ''}`);
+    }
+  };
 
   return (
     <div className="chatgpt-canvas-container">
@@ -95,13 +81,13 @@ export const OpenUIRenderer: React.FC<OpenUIRendererProps> = ({
           <div className="chatgpt-hero-icon" style={{ background: 'transparent', padding: 0 }}>
             <SiteIcon size={48} />
           </div>
-          <h2 className="chatgpt-hero-title">What can OpenUI build for you?</h2>
+          <h2 className="chatgpt-hero-title">What do you want to work through?</h2>
           <p className="chatgpt-hero-desc">
-            Enter a prompt or select an interactive template below to generate dynamic React UI components in real time.
+            Bring a question, a rough idea, or a table of data. Get an answer shaped around the task.
           </p>
 
           <div className="chatgpt-prompt-cards">
-            {FEATURED_CARDS.map((card, idx) => (
+            {PROMPT_EXAMPLES.map((card, idx) => (
               <button
                 key={idx}
                 className="chatgpt-card"
@@ -264,6 +250,7 @@ export const OpenUIRenderer: React.FC<OpenUIRendererProps> = ({
                     <div className="parser-notice">
                       <AlertCircle size={13} />
                       <span>Parser notice: {parseErrors[0].message}</span>
+                      {!isStreaming && <button type="button" onClick={() => onSelectPrompt(`Repair the previous interface using the component schema. Preserve its content. Parser errors: ${parseErrors.map(e => e.message).join('; ')}`)}>Repair interface</button>}
                     </div>
                   )}
                   <div className="chatgpt-openui-root">
@@ -272,6 +259,7 @@ export const OpenUIRenderer: React.FC<OpenUIRendererProps> = ({
                       response={detection.dslContent}
                       isStreaming={isStreaming}
                       onError={handleParseErrors}
+                      onAction={handleAction}
                     />
                   </div>
                 </div>

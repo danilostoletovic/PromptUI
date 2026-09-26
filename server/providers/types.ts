@@ -4,6 +4,7 @@ export interface ChatMessage {
 }
 
 export interface StreamChatOptions {
+  signal?: AbortSignal;
   systemPrompt?: string;
   temperature?: number;
   model?: string;

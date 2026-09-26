@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ChatMessage, SessionItem, HealthStatus } from '../types/chat';
 import { streamChatCompletion, fetchHealth } from '../services/api';
-
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentResponse, setCurrentResponse] = useState<string>('');
@@ -11,6 +10,7 @@ export function useChat() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
+  const [deletedSession, setDeletedSession] = useState<SessionItem | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentResponseRef = useRef<string>('');
@@ -18,6 +18,7 @@ export function useChat() {
   // Fetch health check on mount
   useEffect(() => {
     fetchHealth().then(setHealth);
+    return () => abortControllerRef.current?.abort();
   }, []);
 
   const refreshHealth = useCallback(() => {
@@ -34,7 +35,7 @@ export function useChat() {
 
   const sendMessage = useCallback(
     async (promptText: string) => {
-      if (!promptText.trim() || isStreaming) return;
+      if (!promptText.trim() || abortControllerRef.current) return;
 
       const trimmedPrompt = promptText.trim();
       setSelectedPrompt(trimmedPrompt);
@@ -53,20 +54,27 @@ export function useChat() {
       const sessionId = `session-${Date.now()}`;
       setActiveSessionId(sessionId);
 
+      const connection = health || await fetchHealth();
+      if (controller.signal.aborted) return;
+      setHealth(connection);
+
       await streamChatCompletion({
         messages: updatedMessages,
-        provider: 'openai',
+        provider: connection.provider,
         signal: controller.signal,
         onChunk: (chunk: string) => {
+          if (abortControllerRef.current !== controller) return;
           currentResponseRef.current += chunk;
           setCurrentResponse(currentResponseRef.current);
         },
         onError: (err: string) => {
+          if (abortControllerRef.current !== controller) return;
           setError(err);
           setIsStreaming(false);
           abortControllerRef.current = null;
         },
         onDone: () => {
+          if (abortControllerRef.current !== controller) return;
           setIsStreaming(false);
           abortControllerRef.current = null;
           const finalResponse = currentResponseRef.current;
@@ -77,8 +85,9 @@ export function useChat() {
               prompt: trimmedPrompt,
               response: finalResponse,
               timestamp: Date.now(),
-              provider: health?.provider || 'openai',
-              model: health?.model || 'gpt-4o',
+              provider: connection.provider,
+              model: connection.model,
+              messages: [...updatedMessages, { role: 'assistant', content: finalResponse }],
             };
 
             setSessionHistory((prev) => [newSessionItem, ...prev]);
@@ -98,13 +107,16 @@ export function useChat() {
     (sessionId: string) => {
       const item = sessionHistory.find((s) => s.id === sessionId);
       if (item) {
+        stopStreaming();
+        setMessages(item.messages || [{ role: 'user', content: item.prompt }, { role: 'assistant', content: item.response }]);
+        currentResponseRef.current = item.response;
         setActiveSessionId(sessionId);
         setSelectedPrompt(item.prompt);
         setCurrentResponse(item.response);
         setError(null);
       }
     },
-    [sessionHistory]
+    [sessionHistory, stopStreaming]
   );
 
   const clearSession = useCallback(() => {
@@ -115,6 +127,17 @@ export function useChat() {
     setSelectedPrompt('');
     setActiveSessionId(null);
   }, [stopStreaming]);
+
+  const deleteSession = useCallback((id: string) => {
+    setDeletedSession(sessionHistory.find(item => item.id === id) || null);
+    if (id === activeSessionId) clearSession();
+    setSessionHistory(previous => previous.filter(item => item.id !== id));
+  }, [activeSessionId, clearSession, sessionHistory]);
+
+  const undoDelete = useCallback(() => {
+    if (deletedSession) setSessionHistory(previous => [...previous, deletedSession].sort((a, b) => b.timestamp - a.timestamp));
+    setDeletedSession(null);
+  }, [deletedSession]);
 
   return {
     messages,
@@ -130,5 +153,8 @@ export function useChat() {
     stopStreaming,
     selectSession,
     clearSession,
+    deleteSession,
+    deletedSession,
+    undoDelete,
   };
 }
